@@ -121,10 +121,7 @@ public class UICONTROLLER {
 
                     if (!autoRefreshService.isRunning()) {
                         autoRefreshService.start();
-                        JOptionPane.showMessageDialog(getParentFrame(),
-                                "Auto-Refresh has started and is now actively monitoring tokens.",
-                                "Success",
-                                JOptionPane.INFORMATION_MESSAGE);
+
                     }
                 });
 

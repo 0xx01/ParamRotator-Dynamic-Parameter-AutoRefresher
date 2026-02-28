@@ -45,8 +45,12 @@ public class AutoRefreshService {
     public void start() {
         if (running) stop();
 
-        if (referenceRequest == null || currentRequestInRepeater == null || currentMessageEditor == null) {
-            api.logging().logToOutput("Auto-Refresh cannot start: missing reference or current request");
+        if (referenceRequest == null || currentRequestInRepeater == null || currentMessageEditor == null || parameterManager.getAllParameters().isEmpty()) {
+            api.logging().logToOutput("Auto-Refresh cannot start: missing Parameters or reference request");
+            JOptionPane.showMessageDialog(null,
+                    "Auto-Refresh cannot start: missing Parameters or current request",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -62,6 +66,11 @@ public class AutoRefreshService {
         }, 0, interval, TimeUnit.SECONDS);
 
         api.logging().logToOutput("Auto-Refresh started with interval: " + interval + "s");
+
+        JOptionPane.showMessageDialog(null,
+                "Auto-Refresh has started and is now actively monitoring tokens.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void stop() {
@@ -81,6 +90,7 @@ public class AutoRefreshService {
     private void refreshTokens() {
         if (referenceRequest == null || currentRequestInRepeater == null || currentMessageEditor == null) {
             api.logging().logToOutput("Auto-Refresh: missing references, skipping...");
+
             return;
         }
 
