@@ -12,16 +12,16 @@ public class Main implements BurpExtension {
     public AutoRefreshService autoRefreshService;
     public ParameterManager parameterManager;
     public UICONTROLLER uiController;
+    public DebuggingMode debuggingMode;
 
     @Override
     public void initialize(MontoyaApi montoyaApi) {
         api = montoyaApi;
         api.extension().setName("ParamRotator");
-
-        parameterManager = new ParameterManager(api);
-        autoRefreshService = new AutoRefreshService(api, parameterManager);
-        uiController = new UICONTROLLER(api, parameterManager, autoRefreshService);
-
+        debuggingMode = new DebuggingMode(api);
+        parameterManager = new ParameterManager(api, debuggingMode);
+        autoRefreshService = new AutoRefreshService(api, parameterManager, debuggingMode);
+        uiController = new UICONTROLLER(api, parameterManager, autoRefreshService, debuggingMode);
         api.logging().logToOutput("ParamRotator loaded successfully!");
     }
 }

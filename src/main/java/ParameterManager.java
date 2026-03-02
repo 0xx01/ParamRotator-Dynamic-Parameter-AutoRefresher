@@ -13,6 +13,7 @@ public class ParameterManager {
     private final MontoyaApi api;
     private final List<Parameter> parameters = new CopyOnWriteArrayList<>();
     private boolean autoUpdateEnabled = true;
+    private DebuggingMode debuggingMode;
 
     // Patterns for finding ANY parameter values in responses
     private static final Pattern[] VALUE_PATTERNS = {
@@ -26,8 +27,9 @@ public class ParameterManager {
             Pattern.compile("name=[\"']([^\"']+)[\"']\\s+value=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE),
     };
 
-    public ParameterManager(MontoyaApi api) {
+    public ParameterManager(MontoyaApi api, DebuggingMode debuggingMode) {
         this.api = api;
+        this.debuggingMode = debuggingMode;
     }
 
     /**
@@ -41,9 +43,10 @@ public class ParameterManager {
 
         // Extract from body
         //extractFromBody(request);
-
-        api.logging().logToOutput("Extracted " + parameters.size() + " parameters from request");
-    }
+        if (debuggingMode.isDebuggingModeEnabled() == true) {
+            api.logging().logToOutput("Extracted " + parameters.size() + " parameters from request");
+        }
+        }
 
     /**
      * Extract parameters from ANY URL
@@ -144,15 +147,18 @@ public class ParameterManager {
                 String oldValue = param.getValue();
                 param.setValue(foundValue);
                 updatedValues.put(param.getName(), foundValue);
-
-                api.logging().logToOutput(String.format(
-                        "Auto-updated '%s': %s -> %s",
-                        param.getName(), oldValue, foundValue));
+                if (debuggingMode.isDebuggingModeEnabled() == true) {
+                    api.logging().logToOutput(String.format(
+                            "Auto-updated '%s': %s -> %s",
+                            param.getName(), oldValue, foundValue));
+                }
             }
         }
 
         if (!updatedValues.isEmpty()) {
-            api.logging().logToOutput("Total auto-updates: " + updatedValues.size());
+            if (debuggingMode.isDebuggingModeEnabled() == true) {
+                api.logging().logToOutput("Total auto-updates: " + updatedValues.size());
+            }
         }
 
         return updatedValues;
@@ -266,7 +272,9 @@ public class ParameterManager {
             return;
         }
         parameters.add(new Parameter(name, value, Parameter.ParameterSource.CUSTOM));
-        api.logging().logToOutput("Added custom parameter: " + name);
+        if (debuggingMode.isDebuggingModeEnabled() == true) {
+            api.logging().logToOutput("Added custom parameter: " + name);
+        }
 
     }
 
@@ -275,7 +283,9 @@ public class ParameterManager {
      */
     public void removeParameter(String name) {
         parameters.removeIf(p -> p.getName().equals(name));
-        api.logging().logToOutput("Removed parameter: " + name);
+        if (debuggingMode.isDebuggingModeEnabled() == true) {
+            api.logging().logToOutput("Removed parameter: " + name);
+        }
     }
 
     /**
@@ -293,8 +303,10 @@ public class ParameterManager {
      */
     public void toggleAutoUpdate() {
         this.autoUpdateEnabled = !this.autoUpdateEnabled;
-        api.logging().logToOutput("Auto-Update " + (autoUpdateEnabled ? "ENABLED" : "DISABLED"));
-    }
+        if (debuggingMode.isDebuggingModeEnabled() == true) {
+            api.logging().logToOutput("Auto-Update " + (autoUpdateEnabled ? "ENABLED" : "DISABLED"));
+            }
+        }
 
     public boolean isAutoUpdateEnabled() { return autoUpdateEnabled; }
 

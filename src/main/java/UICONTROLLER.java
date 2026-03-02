@@ -14,14 +14,16 @@ public class UICONTROLLER {
     private final MontoyaApi api;
     private final ParameterManager parameterManager;
     private final AutoRefreshService autoRefreshService;
+    private final DebuggingMode debuggingMode;
 
     public UICONTROLLER(MontoyaApi api,
                         ParameterManager parameterManager,
-                        AutoRefreshService autoRefreshService) {
+                        AutoRefreshService autoRefreshService, DebuggingMode debuggingMode) {
 
         this.api = api;
         this.parameterManager = parameterManager;
         this.autoRefreshService = autoRefreshService;
+        this.debuggingMode = debuggingMode;
 
         registerMenuItems();
     }
@@ -47,6 +49,20 @@ public class UICONTROLLER {
                 JMenuItem startAutoRefreshButton = new JMenuItem("Start Auto-Refresh");
                 JMenuItem stopAutoRefreshButton = new JMenuItem("Stop Auto-Refresh");
                 JMenuItem setIntervalButton = new JMenuItem("Set Interval");
+                JMenuItem debuggingModeButton = new JMenuItem("debugging Mode");
+
+                // =========================
+                // Debugging Mode
+                // =========================
+
+                debuggingModeButton.addActionListener(e -> {
+                    debuggingMode.debuggingModeUpdate();
+                    api.logging().logToOutput(debuggingMode.isDebuggingModeEnabled());
+                    String status = debuggingMode.isDebuggingModeEnabled() ? "ON" : "OFF";
+                    JOptionPane.showMessageDialog(getParentFrame(),
+                            "Debugging Mode is now " + status,
+                            "Debugging Mode", JOptionPane.INFORMATION_MESSAGE);
+                });
 
                 // =========================
                 // SET REFERENCE
@@ -211,7 +227,8 @@ public class UICONTROLLER {
                         new JSeparator(),
                         startAutoRefreshButton,
                         stopAutoRefreshButton,
-                        setIntervalButton
+                        setIntervalButton,
+                        debuggingModeButton
                 );
             }
 
