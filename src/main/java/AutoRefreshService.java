@@ -19,7 +19,7 @@ public class AutoRefreshService {
     private ScheduledExecutorService scheduler;
     private int interval = 30; // default 30s
     private boolean running = false;
-    private DebuggingMode debuggingMode;
+    private final DebuggingMode debuggingMode;
 
     public AutoRefreshService(MontoyaApi api, ParameterManager pm, DebuggingMode debuggingMode) {
         this.api = api;
@@ -48,7 +48,7 @@ public class AutoRefreshService {
         if (running) stop();
 
         if (referenceRequest == null || currentRequestInRepeater == null || currentMessageEditor == null || parameterManager.getAllParameters().isEmpty()) {
-            if (debuggingMode.isDebuggingModeEnabled() == true) {
+            if (debuggingMode.isDebuggingModeEnabled()) {
                 api.logging().logToOutput("Auto-Refresh cannot start: missing Parameters or reference request");
             }
             JOptionPane.showMessageDialog(null,
@@ -74,7 +74,7 @@ public class AutoRefreshService {
                 api.logging().logToError("Auto-Refresh failed: " + ex.getMessage());
             }
         }, 0, interval, TimeUnit.SECONDS);
-        if (debuggingMode.isDebuggingModeEnabled() == true) {
+        if (debuggingMode.isDebuggingModeEnabled()) {
             api.logging().logToOutput("Auto-Refresh started with interval: " + interval + "s");
         }
         JOptionPane.showMessageDialog(null,
@@ -94,7 +94,7 @@ public class AutoRefreshService {
             }
         }
 
-        if (debuggingMode.isDebuggingModeEnabled() == true){
+        if (debuggingMode.isDebuggingModeEnabled()){
             api.logging().logToOutput("Auto-Refresh stopped");
         }
     }
@@ -102,12 +102,12 @@ public class AutoRefreshService {
     // --- Token refresh logic ---
     private void refreshTokens() {
         if (referenceRequest == null || currentRequestInRepeater == null || currentMessageEditor == null) {
-            if (debuggingMode.isDebuggingModeEnabled() == true) {
+            if (debuggingMode.isDebuggingModeEnabled()) {
                 api.logging().logToOutput("Auto-Refresh: missing references, skipping...");
             }
             return;
         }
-        if (debuggingMode.isDebuggingModeEnabled() == true) {
+        if (debuggingMode.isDebuggingModeEnabled()) {
             api.logging().logToOutput("Auto-Refresh: fetching new tokens...");
         }
         // send reference request
@@ -116,7 +116,7 @@ public class AutoRefreshService {
         // update all parameters from response
         if (parameterManager.isAutoUpdateEnabled()) {
             int updated = parameterManager.updateFromResponse(response).size();
-            if (updated > 0 & debuggingMode.isDebuggingModeEnabled() == true) {
+            if (updated > 0 & debuggingMode.isDebuggingModeEnabled()) {
                 api.logging().logToOutput("Auto-Refresh: updated " + updated + " parameters");
             }
         }
@@ -128,7 +128,7 @@ public class AutoRefreshService {
             SwingUtilities.invokeLater(() -> {
                 currentMessageEditor.setRequest(updatedRequest);
                 currentRequestInRepeater = updatedRequest;
-                if (debuggingMode.isDebuggingModeEnabled() == true) {
+                if (debuggingMode.isDebuggingModeEnabled()) {
                     api.logging().logToOutput("Auto-Refresh: request updated with latest parameters");
                 }
                 });
