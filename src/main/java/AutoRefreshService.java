@@ -1,7 +1,7 @@
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
-
+import java.util.concurrent.*;
 import javax.swing.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -57,8 +57,14 @@ public class AutoRefreshService {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
+        //
+        ThreadFactory threadFactory = r -> {
+            Thread t = new Thread(r, "AutoRefresh-Thread");
+            t.setDaemon(true);
+            return t;
+        };
 
-        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
         running = true;
 
         scheduler.scheduleWithFixedDelay(() -> {
