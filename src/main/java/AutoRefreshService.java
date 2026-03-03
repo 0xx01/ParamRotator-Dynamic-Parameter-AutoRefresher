@@ -57,7 +57,7 @@ public class AutoRefreshService {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-        //
+        // Prevent memory leaks by allowing threads to terminate automatically when Burp closes.
         ThreadFactory threadFactory = r -> {
             Thread t = new Thread(r, "AutoRefresh-Thread");
             t.setDaemon(true);
