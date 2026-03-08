@@ -2,14 +2,31 @@ import burp.api.montoya.MontoyaApi;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 
+/**
+ * Dialog UI to manage HTTP parameters.
+ * <p>
+ * Features:
+ * - Add, edit, delete parameters
+ * - Enable/disable parameters
+ * - Toggle auto-update for parameters
+ * - Refresh the parameter table
+ * </p>
+ */
 public class ParameterDialog extends JDialog {
+
     private final ParameterManager parameterManager;
     private final ParameterTableModel tableModel;
     private JTable table;
     private JLabel statusLabel;
 
+    /**
+     * Constructs the ParameterDialog.
+     *
+     * @param parent  Parent frame
+     * @param api     Montoya API (for logging if needed)
+     * @param manager ParameterManager instance
+     */
     public ParameterDialog(Frame parent, MontoyaApi api, ParameterManager manager) {
         super(parent, "Parameter Manager", true);
         this.parameterManager = manager;
@@ -20,10 +37,17 @@ public class ParameterDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
+    /** Initializes the dialog UI components */
     private void setupUI() {
         setLayout(new BorderLayout());
 
-        // Toolbar
+        setupToolbar();
+        setupTable();
+        setupBottomPanel();
+    }
+
+    /** Creates toolbar with buttons and their actions */
+    private void setupToolbar() {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
 
@@ -45,42 +69,6 @@ public class ParameterDialog extends JDialog {
 
         add(toolBar, BorderLayout.NORTH);
 
-        // Table - shows ALL parameters
-        table = new JTable(tableModel);
-        table.setRowHeight(25);
-        table.getColumnModel().getColumn(0).setPreferredWidth(120);
-        table.getColumnModel().getColumn(1).setPreferredWidth(150);
-        table.getColumnModel().getColumn(2).setPreferredWidth(100);
-        table.getColumnModel().getColumn(3).setPreferredWidth(70);
-        table.getColumnModel().getColumn(4).setPreferredWidth(70);
-        table.getColumnModel().getColumn(5).setPreferredWidth(60);
-
-        // Checkbox for Enabled column
-        table.getColumnModel().getColumn(3).setCellRenderer(table.getDefaultRenderer(Boolean.class));
-        table.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(new JCheckBox()));
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane, BorderLayout.CENTER);
-
-        // Bottom panel with status
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton closeButton = new JButton("Close");
-        closeButton.addActionListener(e -> dispose());
-        buttonPanel.add(closeButton);
-
-        statusLabel = new JLabel("Auto-Update: " +
-                (parameterManager.isAutoUpdateEnabled() ? "ON" : "OFF") +
-                " | Total Parameters: " + parameterManager.getAllParameters().size());
-        statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-
-        bottomPanel.add(statusLabel, BorderLayout.WEST);
-        bottomPanel.add(buttonPanel, BorderLayout.EAST);
-
-        add(bottomPanel, BorderLayout.SOUTH);
-
-        // Button actions
         addButton.addActionListener(e -> showAddDialog());
         editButton.addActionListener(e -> showEditDialog());
         deleteButton.addActionListener(e -> deleteSelected());
@@ -92,6 +80,42 @@ public class ParameterDialog extends JDialog {
         });
     }
 
+    /** Initializes the JTable for displaying parameters */
+    private void setupTable() {
+        table = new JTable(tableModel);
+        table.setRowHeight(25);
+
+        int[] widths = {120, 150, 100, 70, 70, 60};
+        for (int i = 0; i < widths.length; i++)
+            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+
+        // Enable checkbox editor for Enabled column
+        table.getColumnModel().getColumn(3).setCellRenderer(table.getDefaultRenderer(Boolean.class));
+        table.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(new JCheckBox()));
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    /** Creates bottom panel with status label and Close button */
+    private void setupBottomPanel() {
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton closeButton = new JButton("Close");
+        closeButton.addActionListener(e -> dispose());
+        buttonPanel.add(closeButton);
+
+        statusLabel = new JLabel(getStatusText());
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+
+        bottomPanel.add(statusLabel, BorderLayout.WEST);
+        bottomPanel.add(buttonPanel, BorderLayout.EAST);
+
+        add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    /** Shows dialog to add a new custom parameter */
     private void showAddDialog() {
         JPanel panel = new JPanel(new GridLayout(0, 2, 5, 5));
 
@@ -115,11 +139,8 @@ public class ParameterDialog extends JDialog {
         if (result == JOptionPane.OK_OPTION) {
             String name = nameField.getText().trim();
             String value = valueField.getText().trim();
-
             if (!name.isEmpty()) {
                 parameterManager.addCustomParameter(name, value);
-
-                // Set options for the new parameter
                 parameterManager.getAllParameters().stream()
                         .filter(p -> p.getName().equals(name))
                         .findFirst()
@@ -127,13 +148,13 @@ public class ParameterDialog extends JDialog {
                             p.setEnabled(enabledBox.isSelected());
                             p.setAutoUpdate(autoUpdateBox.isSelected());
                         });
-
                 tableModel.fireTableDataChanged();
                 updateStatusLabel();
             }
         }
     }
 
+    /** Shows dialog to edit the selected parameter */
     private void showEditDialog() {
         int row = table.getSelectedRow();
         if (row < 0) {
@@ -153,6 +174,7 @@ public class ParameterDialog extends JDialog {
         }
     }
 
+    /** Deletes selected parameters */
     private void deleteSelected() {
         int[] rows = table.getSelectedRows();
         if (rows.length == 0) return;
@@ -171,6 +193,7 @@ public class ParameterDialog extends JDialog {
         }
     }
 
+    /** Enables or disables selected parameters */
     private void setSelectedEnabled(boolean enable) {
         int[] rows = table.getSelectedRows();
         for (int row : rows) {
@@ -181,11 +204,18 @@ public class ParameterDialog extends JDialog {
                     .ifPresent(p -> p.setEnabled(enable));
         }
         tableModel.fireTableDataChanged();
+        updateStatusLabel();
     }
 
+    /** Updates the status label with current parameter info */
     private void updateStatusLabel() {
-        statusLabel.setText("Auto-Update: " +
+        statusLabel.setText(getStatusText());
+    }
+
+    /** Generates status text for bottom panel */
+    private String getStatusText() {
+        return "Auto-Update: " +
                 (parameterManager.isAutoUpdateEnabled() ? "ON" : "OFF") +
-                " | Total Parameters: " + parameterManager.getAllParameters().size());
+                " | Total Parameters: " + parameterManager.getAllParameters().size();
     }
 }

@@ -1,27 +1,46 @@
 import burp.api.montoya.BurpExtension;
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.http.message.requests.HttpRequest;
 
+/**
+ * Main entry point for the ParamRotator Burp Suite extension.
+ * Initializes core components:
+ * - DebuggingMode
+ * - ParameterManager
+ * - AutoRefreshService
+ * - UIController
+ */
 public class Main implements BurpExtension {
 
-    public static MontoyaApi api;
+    /** The Burp API object for interacting with the host application */
+    private MontoyaApi api;
 
-    public HttpRequest referenceRequest;
-    public String referenceFullUrl = "";
+    /** Handles automatic token refresh and parameter updates */
+    private AutoRefreshService autoRefreshService;
 
-    public AutoRefreshService autoRefreshService;
-    public ParameterManager parameterManager;
-    public UICONTROLLER uiController;
-    public DebuggingMode debuggingMode;
+    /** Manages all parameters extracted or added by the user */
+    private ParameterManager parameterManager;
 
+    /** Handles UI elements and context menu actions */
+    private UIController uiController;
+
+    /** Controls logging and debug messages */
+    private DebuggingMode debuggingMode;
+
+    /**
+     * Initialize the Burp extension and its core components.
+     *
+     * @param montoyaApi The Montoya API instance provided by Burp Suite
+     */
     @Override
     public void initialize(MontoyaApi montoyaApi) {
-        api = montoyaApi;
+        this.api = montoyaApi;
         api.extension().setName("ParamRotator");
-        debuggingMode = new DebuggingMode(api);
-        parameterManager = new ParameterManager(api, debuggingMode);
-        autoRefreshService = new AutoRefreshService(api, parameterManager, debuggingMode);
-        uiController = new UICONTROLLER(api, parameterManager, autoRefreshService, debuggingMode);
+
+        this.debuggingMode = new DebuggingMode(api);
+        this.parameterManager = new ParameterManager(api, debuggingMode);
+        this.autoRefreshService = new AutoRefreshService(api, parameterManager, debuggingMode);
+        this.uiController = new UIController(api, parameterManager, autoRefreshService, debuggingMode);
+
         api.logging().logToOutput("ParamRotator loaded successfully!");
     }
 }
