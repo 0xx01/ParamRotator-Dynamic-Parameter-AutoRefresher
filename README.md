@@ -99,20 +99,21 @@ By keeping requests valid, ParamRotator helps surface vulnerabilities that might
 
 ## Installation
 
-### 1. Build the Extension
+ParamRotator can be installed in two ways:
 
-ParamRotator can be installed either by downloading the **pre-built release** or by **building the extension from source**.
+- **Option 1:** Install the pre-built release *(recommended)*
+- **Option 2:** Build the extension from source
 
 ---
 
-### Option 1: Install from Release (Recommended)
+## Option 1 — Install from Release (Recommended)
 
 1. Download the latest release from the **GitHub Releases** page.
 2. Open **Burp Suite**.
 3. Navigate to **Extensions**.
 4. Click **Add**.
 5. Set **Extension Type** to `Java`.
-6. Select the downloaded `ParamRotator.jar` file.
+6. Select the downloaded `ParamRotator.jar`.
 7. Click **Next** to load the extension.
 
 ---
@@ -132,7 +133,7 @@ The compiled JAR will be generated at `target/ParamRotator.jar`.
 
 ![Build Command](docs/images/build.png)
 
-### 2. Load into Burp Suite
+### Load into Burp Suite
 
 1. Open **Burp Suite**
 2. Navigate to **Extensions** (formerly Extender)
