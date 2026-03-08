@@ -85,6 +85,23 @@ public class ParameterManager {
     }
 
     /**
+     * Extracts parameters from a Location header URL string.
+     * Merges into existing parameters without clearing them.
+     *
+     * @param locationUrl URL string from Location header
+     * @return Number of newly added parameters
+     */
+    public int extractFromLocationHeader(String locationUrl) {
+        int before = parameters.size();
+        log("Extracting from Location header: " + locationUrl);
+        extractPathParams(locationUrl);
+        extractQueryParams(locationUrl);
+        int added = parameters.size() - before;
+        log("Added " + added + " parameters from Location header");
+        return added;
+    }
+
+    /**
      * Applies stored parameters to a given request.
      *
      * @param request Base HTTP request
@@ -167,7 +184,10 @@ public class ParameterManager {
         String query = url.split("\\?", 2)[1];
         for (String pair : query.split("&")) {
             String[] kv = pair.split("=", 2);
-            addParam(kv[0], kv.length > 1 ? kv[1] : "", Parameter.ParameterSource.URL_QUERY);
+            String paramName = kv[0].trim();
+            if (paramName.isEmpty()) continue; // skip malformed pairs
+            String paramValue = kv.length > 1 ? kv[1].trim() : "";
+            addParam(paramName, paramValue, Parameter.ParameterSource.URL_QUERY);
         }
     }
 

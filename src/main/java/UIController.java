@@ -119,7 +119,7 @@ public class UIController {
                     return Optional.of(event.messageEditorRequestResponse().get().requestResponse());
                 }
                 List<HttpRequestResponse> selected = event.selectedRequestResponses();
-                return selected.isEmpty() ? Optional.empty() : Optional.of(selected.get(0));
+                return (selected == null || selected.isEmpty()) ? Optional.empty() : Optional.of(selected.get(0));
             }
 
             /** Toggle debugging mode */
@@ -205,11 +205,17 @@ public class UIController {
                                 .findFirst()
                                 .orElse(null);
 
-                        if (location != null && location.contains("?")) {
-                            JOptionPane.showMessageDialog(getParentFrame(),
-                                    "Extracted parameters from Location header.",
-                                    "Success",
-                                    JOptionPane.INFORMATION_MESSAGE);
+                        if (location != null) {
+                            int extracted = parameterManager.extractFromLocationHeader(location);
+                            if (extracted > 0) {
+                                JOptionPane.showMessageDialog(getParentFrame(),
+                                        "Extracted " + extracted + " parameters from Location header.",
+                                        "Success", JOptionPane.INFORMATION_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(getParentFrame(),
+                                        "No new parameters found in Location header.",
+                                        "Warning", JOptionPane.WARNING_MESSAGE);
+                            }
                         } else {
                             JOptionPane.showMessageDialog(getParentFrame(),
                                     "No Location header with parameters found.",

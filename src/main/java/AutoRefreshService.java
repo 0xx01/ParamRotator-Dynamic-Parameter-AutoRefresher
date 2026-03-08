@@ -23,10 +23,10 @@ public class AutoRefreshService {
     private HttpRequest referenceRequest;
 
     /** Clean base request to avoid parameter accumulation */
-    private HttpRequest baseRequest;
+    private volatile HttpRequest baseRequest;
 
     /** Current request displayed in Repeater editor */
-    private HttpRequest currentRequestInRepeater;
+    private volatile HttpRequest currentRequestInRepeater;
 
     private burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse currentMessageEditor;
 
@@ -37,7 +37,7 @@ public class AutoRefreshService {
     private int interval = 30;
 
     /** Flag indicating if auto-refresh is running */
-    private boolean running = false;
+    private volatile boolean running = false;
 
     /**
      * Constructs the AutoRefreshService.
@@ -127,7 +127,7 @@ public class AutoRefreshService {
             } catch (Exception ex) {
                 api.logging().logToError("Auto-Refresh failed: " + ex.getMessage());
             }
-        }, 0, interval, TimeUnit.SECONDS);
+        }, 5, interval, TimeUnit.SECONDS);
 
         if (debuggingMode.isDebuggingModeEnabled()) {
             api.logging().logToOutput("Auto-Refresh started with interval: " + interval + "s");
