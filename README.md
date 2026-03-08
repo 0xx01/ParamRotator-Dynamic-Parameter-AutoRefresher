@@ -1,6 +1,6 @@
 # ParamRotator
 
-[![Burp Suite](https://img.shields.io/badge/Burp_Suite-2022.8.1+-orange?logo=burpsuite&logoColor=white)](https://portswigger.net/burp)
+[![Burp Suite](https://img.shields.io/badge/Burp_Suite-2025+-orange?logo=burpsuite&logoColor=white)](https://portswigger.net/burp)
 [![Java](https://img.shields.io/badge/Java-21-blue?logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
 [![Maven](https://img.shields.io/badge/Maven-Build-red?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
@@ -92,7 +92,7 @@ By keeping requests valid, ParamRotator helps surface vulnerabilities that might
 |------------|:------------------------|
 | Java JDK   | 21                      |
 | Maven      | 3.6+                    |
-| Burp Suite | 2022.8.1+ (Montoya API) |
+| Burp Suite | 2025.12+ (Montoya API) |
 
 ---
 
