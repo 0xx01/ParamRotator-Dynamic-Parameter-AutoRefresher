@@ -242,7 +242,7 @@ public class ParameterManager {
 
         /*
          * Then apply query parameters:
-         * /path;param=value?key=value
+         * /path?key=value
          */
         String withQuery = appendParams(
                 withMatrix,

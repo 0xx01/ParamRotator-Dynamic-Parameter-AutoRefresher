@@ -8,6 +8,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
+import burp.api.montoya.core.ToolType;
+import burp.api.montoya.ui.contextmenu.InvocationType;
+
 
 /**
  * Handles Burp Suite UI interactions and context menu registration.
@@ -155,8 +158,24 @@ public class UIController {
 
             /** Start auto-refresh */
             private void startAutoRefresh(ContextMenuEvent event) {
+                // Check if invoked from Repeater
+                if (!event.isFromTool(ToolType.REPEATER)) {
+                    JOptionPane.showMessageDialog(
+                            getParentFrame(),
+                            "This feature can only be used inside Repeater!",
+                            "Warning",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                    return;
+                }
+
                 if (event.messageEditorRequestResponse().isEmpty()) {
-                    JOptionPane.showMessageDialog(getParentFrame(), "Use inside Repeater!", "Warning", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            getParentFrame(),
+                            "No request selected.",
+                            "Warning",
+                            JOptionPane.WARNING_MESSAGE
+                    );
                     return;
                 }
                 var editor = event.messageEditorRequestResponse().get();
