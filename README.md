@@ -92,7 +92,7 @@ By keeping requests valid, ParamRotator helps surface vulnerabilities that might
 |------------|:------------------------|
 | Java JDK   | 21                      |
 | Maven      | 3.6+                    |
-| Burp Suite | 2025.12+ (Montoya API) |
+| Burp Suite | 2025+ (Montoya API) |
 
 ---
 
