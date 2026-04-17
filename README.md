@@ -1,12 +1,12 @@
 # ParamRotator
 
-[![Burp Suite](https://img.shields.io/badge/Burp_Suite-2025+-orange?logo=burpsuite&logoColor=white)](https://portswigger.net/burp)
+[![Burp Suite](https://img.shields.io/badge/Burp_Suite-2026+-orange?logo=burpsuite&logoColor=white)](https://portswigger.net/burp)
 [![Java](https://img.shields.io/badge/Java-21-blue?logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
 [![Maven](https://img.shields.io/badge/Maven-Build-red?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
 [![Status: Active](https://img.shields.io/badge/Status-Active-22c55e)]()
 
-> A Burp Suite extension that automates dynamic HTTP parameter management, keeping requests valid throughout your entire security testing workflow.
+> A Burp Suite extension that automates dynamic HTTP parameter management for penetration testing of Internet Banking and enterprise web applications.
 
 ---
 
@@ -23,6 +23,8 @@ By automatically extracting and refreshing these values, the extension ensures t
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
 - [Features](#features)
+- [Architecture](#architecture)
+- [Refresh Modes](#refresh-modes)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -47,38 +49,52 @@ This creates real friction for pentesters:
 
 Handling these parameters manually slows testing down and introduces errors — outdated values, missed parameters, and unreproducible findings.
 
+
 ---
 
 ## The Solution
 
-**ParamRotator** automates the full lifecycle of dynamic parameter management. The extension extracts values directly from requests and keeps them fresh using a configurable reference request — no manual copying required.
+ParamRotator automates the full token lifecycle:
+```
+Extract → Store → Refresh → Inject
+```
 
-By keeping requests valid, ParamRotator helps surface vulnerabilities that might otherwise remain hidden behind expired tokens or broken request state.
+Two refresh modes are available depending on the application's session binding behavior — see [Refresh Modes](#refresh-modes).
 
 ---
 
 ## Features
 
 ### Parameter Extraction
+- Extract **matrix parameters** (`;param=value`) from URL path
 - Extract **URL query parameters** (`?param=value`)
-- Extract **matrix parameters** (`;param=value`)
-- Extract **custom parameters** (user-defined)
 - Extract parameters from **Location headers**
+- Add **custom parameters** manually
 
-### Automatic Token Refresh
-- Periodically refresh tokens using a **reference request**
-- Automatically update stored parameters from response
+### Automatic Token Injection
+- Injects fresh tokens into every Repeater request automatically
+- Extracts new tokens from every Repeater response automatically
+- No manual copying required
+
+### Auto-Refresh
+- Background thread sends a reference request at a configurable interval
+- Automatically updates stored parameters from the response
 - Configurable refresh interval in seconds
 
-### Parameter Management UI
-- Visual table showing all tracked parameters with real-time values
-- Add, edit, delete parameters
-- Enable/disable parameters individually
+### Two Refresh Modes
+- **Repeater Listener Mode** — extracts tokens live from Repeater responses
+- **Reference Request Mode** — sends a saved request periodically to fetch fresh tokens
+
+### Parameter Manager UI
+- Visual table showing all tracked parameters with current values
+- Enable / disable parameters individually
 - Toggle auto-update per parameter
+- Add, edit, delete parameters
 
 ### Burp Integration
-- Works directly inside **Repeater**
+- Works directly inside Repeater
 - Right-click context menu integration
+- Custom **ParamRotator tab** inside Repeater showing the updated request
 - Clean extension unload with no resource leaks
 
 ### Debugging Mode
@@ -86,117 +102,185 @@ By keeping requests valid, ParamRotator helps surface vulnerabilities that might
 
 ---
 
+## Architecture
+```
+src/main/java/
+├── Main.java
+│
+├── core/
+│   ├── ParameterManager.java     ← extract, store, inject parameters
+│   ├── AutoRefreshService.java   ← background thread, HTTP refresh
+│   ├── DebuggingMode.java        ← toggle verbose logging
+│   ├── Settings.java             ← refresh mode management
+│   └── Parameter.java            ← data model
+│
+├── handler/
+│   └── RepeaterHttpHandler.java  ← auto-inject + auto-extract on every Repeater send
+│
+└── gui/
+    ├── UIController.java              ← context menu, user actions
+    ├── ParameterDialog.java           ← parameter manager popup
+    ├── ParameterTableModel.java       ← Swing table data model
+    └── ParamRotatorRequestEditor.java ← custom tab in Repeater
+```
+
+---
+
+## Refresh Modes
+
+### Repeater Listener Mode *(default)*
+
+The extension listens to every Repeater request and response:
+```
+User presses Send
+    → inject current tokens into the request 
+    → request is sent to the server
+    → extract new tokens from the response 
+    → ready for the next Send with fresh tokens 
+```
+
+Best for applications **with endpoint binding** — tokens are valid across endpoints.
+
+### Reference Request Mode
+
+The extension sends a saved reference request at a fixed interval:
+```
+Set as Reference → Start Auto-Refresh
+    → background thread sends reference request every N seconds
+    → extracts fresh tokens from the response
+    → injects them into the Repeater request
+```
+
+Best for applications **without endpoint binding** — tokens are tied to specific endpoints.
+
+Switch between modes via right-click → **Mode: Repeater Listener / Reference Request**.
+
+> **Note:** Due to a current Burp Suite API limitation, the Repeater editor does not visually reflect token updates. Tokens are correctly injected into every outgoing request — verify via the **ParamRotator tab** or **Logger**.
+
+---
+
 ## Requirements
 
-| Dependency | Version                 |
-|------------|:------------------------|
-| Java JDK   | 21                      |
-| Maven      | 3.6+                    |
-| Burp Suite | 2025+ (Montoya API) |
+| Dependency | Version |
+|------------|---------|
+| Java JDK   | 21      |
+| Maven      | 3.6+    |
+| Burp Suite | 2026+   |
 
 ---
 
 ## Installation
 
-ParamRotator can be installed in two ways:
+### Option 1 — Install from Release *(recommended)*
 
-- **Option 1:** Install the pre-built release *(recommended)*
-- **Option 2:** Build from source
-
----
-
-### Option 1 — Install from Release (Recommended)
-
-1. Download the latest `ParamRotator.jar` from the [GitHub Releases](https://github.com/0xx01/ParamRotator/releases) page.
+1. Download the latest `ParamRotator.jar` from the [Releases](https://github.com/0xx01/ParamRotator/releases) page.
 2. Open **Burp Suite**.
-3. Navigate to **Extensions**.
-4. Click **Add**.
-5. Set **Extension Type** to `Java`.
-6. Select the downloaded `ParamRotator.jar`.
-7. Click **Next** to load the extension.
-
----
+3. Navigate to **Extensions → Add**.
+4. Set **Extension Type** to `Java`.
+5. Select the downloaded `ParamRotator.jar`.
+6. Click **Next**.
 
 ### Option 2 — Build from Source
-
-**Prerequisites:** Java 21 and Maven installed.
-
 ```bash
 git clone https://github.com/0xx01/ParamRotator.git
 cd ParamRotator
 mvn clean package
 ```
 
-The compiled JAR will be generated at `target/ParamRotator.jar`.
-
-**Load into Burp Suite:**
-
-1. Open **Burp Suite**
-2. Navigate to **Extensions**
-3. Click **Add**
-4. Set **Extension Type** to `Java`
-5. Select `target/ParamRotator.jar`
-6. Click **Next** — the extension loads automatically
+The compiled JAR will be at `target/ParamRotator.jar`. Load it into Burp Suite using the same steps above.
 
 ---
 
 ## Usage
 
-### Step 1 — Extract Parameters
-Right-click any request in Burp → **Extract Parameters from Request**
+### Repeater Listener Mode *(default)*
 
-ParamRotator will detect and store all dynamic parameters from the URL automatically (matrix params and query params).
+**Step 1 — Extract Parameters**
+
+Right-click any request → **Extract Parameters from Request**
 
 ![extract_Parameter](docs/images/extract_Parameter.gif)
 
-### Step 2 — Set Reference Request
-Right-click the request that issues fresh tokens (e.g. login request) → **Set as Reference**
+**Step 2 — Send to Repeater**
 
-This is the request ParamRotator will send periodically to fetch updated token values.
+Intercept the target request → Send to Repeater → Drop
 
+**Step 3 — Press Send**
+
+Press Send in Repeater. ParamRotator will automatically inject and refresh tokens on every request.
+
+---
+
+### Reference Request Mode
+
+**Step 1 — Extract Parameters**
+
+Right-click any request → **Extract Parameters from Request**
+![extract_Parameter](docs/images/extract_Parameter.gif)
+
+**Step 2 — Set as Reference**
+
+Right-click the login or token-issuing request → **Set as Reference**
 ![set-refrence](docs/images/set-refrence.gif)
 
-### Step 3 — Start Auto-Refresh
-Open your target request in **Repeater**, then right-click → **Start Auto-Refresh**
+**Step 3 — Start Auto-Refresh**
 
-ParamRotator will now refresh tokens in the background at your configured interval and update the Repeater request automatically.
+Open target request in Repeater → right-click → **Start Auto-Refresh**
 
 ![start_auto-refresh](docs/images/start_auto-refresh.gif)
 
-### Step 4 — Manage Parameters *(optional)*
-Right-click → **Manage Parameters...** to open the Parameter Manager UI.
+---
 
-From here you can:
-- View all tracked parameters and their current values
-- Enable or disable individual parameters
-- Add custom parameters manually
-- Toggle auto-update per parameter
+### Parameter Manager *(optional)*
+
+Right-click → **Manage Parameters...** to open the Parameter Manager.
 
 ![Parameter_Manager](docs/images/Parameter_Manager.gif)
 
-### Other Options
+---
 
-| Menu Item                                   | Description                                               |
-|---------------------------------------------|-----------------------------------------------------------|
-| **Extract Parameters from Location Header** | Extract params from a redirect response's Location header |
-| **Stop Auto-Refresh**                       | Stop the background refresh scheduler                     |
-| **Set Interval**                            | Change the refresh interval (default: 30 seconds)         |
-| **Debugging Mode**                          | Toggle verbose logging in Burp output                     |
+### Context Menu Reference
+
+| Menu Item | Description |
+|-----------|-------------|
+| **Set as Reference** | Save the current request as the token source |
+| **Remove Reference Request** | Clear the saved reference request |
+| **Extract Parameters from Request** | Extract matrix and query params from URL |
+| **Extract Parameters from Location Header** | Extract params from a redirect Location header |
+| **Start Auto-Refresh** | Start background token refresh (Repeater only) |
+| **Stop Auto-Refresh** | Stop the background refresh scheduler |
+| **Set Interval** | Change the refresh interval (default: 30s) |
+| **Manage Parameters...** | Open the Parameter Manager UI |
+| **Debugging Mode** | Toggle verbose logging in Burp output |
+| **Mode: ...** | Switch between Repeater Listener and Reference Request mode |
 
 ---
 
 ## Demo
-
-> The demo below shows ParamRotator extracting parameters from a live request and automatically refreshing tokens during a testing session.
+**Demo Reference Request Mode**
 
 [![Watch Demo](https://img.youtube.com/vi/QiWHnsslB0c/0.jpg)](https://youtu.be/QiWHnsslB0c)
+
+**Demo Repeater Listener Mode**
+
+[![Watch Demo](https://img.youtube.com/vi/fd5fb0pHxNw/0.jpg)](https://youtu.be/fd5fb0pHxNw)
 
 ---
 
 ## Contributing
 
 Contributions, issues, and feature requests are welcome.
-Feel free to open an [Issue](https://github.com/0xx01/ParamRotator/issues) or submit a Pull Request.
+
+If you'd like to contribute:
+
+1. Fork the repository
+2. Create a new branch (`feature/your-feature-name` or `fix/your-bug-name`)
+3. Commit your changes
+4. Push to your fork
+5. Open a Pull Request
+
+You can also open an Issue to discuss ideas or report bugs:
+https://github.com/0xx01/ParamRotator/issues
 
 ---
 

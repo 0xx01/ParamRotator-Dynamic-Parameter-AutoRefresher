@@ -1,9 +1,13 @@
+package gui;
+
+import core.Parameter;
+
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
 /**
  * Table model responsible for displaying and editing {@link Parameter} objects
- * inside the Parameter Manager dialog.
+ * inside the core.Parameter Manager dialog.
  *
  * <p>
  * Columns:

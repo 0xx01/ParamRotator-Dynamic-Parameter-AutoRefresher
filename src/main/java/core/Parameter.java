@@ -1,9 +1,11 @@
+package core;
+
 /**
  * Represents an HTTP parameter that can be tracked, updated, and applied to requests.
  */
 public class Parameter {
 
-    /** Parameter name */
+    /** core.Parameter name */
     private final String name;
 
     /** Current value of the parameter */
@@ -51,7 +53,7 @@ public class Parameter {
     }
 
     /**
-     * Constructs a Parameter instance.
+     * Constructs a core.Parameter instance.
      *
      * @param name   Parameter name
      * @param value  Initial value

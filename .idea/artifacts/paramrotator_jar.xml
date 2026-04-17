@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="paramrotator:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/paramrotator_jar</output-path>
+    <root id="archive" name="paramrotator.jar">
+      <element id="module-output" name="paramrotator" />
+    </root>
+  </artifact>
+</component>

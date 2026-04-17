@@ -1,3 +1,5 @@
+package core;
+
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
@@ -40,11 +42,11 @@ public class AutoRefreshService {
     private volatile boolean running = false;
 
     /**
-     * Constructs the AutoRefreshService.
+     * Constructs the core.AutoRefreshService.
      *
      * @param api              Montoya API instance
-     * @param parameterManager ParameterManager instance
-     * @param debuggingMode    DebuggingMode instance
+     * @param parameterManager core.ParameterManager instance
+     * @param debuggingMode    core.DebuggingMode instance
      */
     public AutoRefreshService(MontoyaApi api, ParameterManager parameterManager, DebuggingMode debuggingMode) {
         this.api = api;
@@ -204,5 +206,17 @@ public class AutoRefreshService {
                 }
             });
         }
+    }
+    /**
+     * Remove the Reference Request
+     */
+    public void removeReferenceRequest() {
+        referenceRequest = null;
+    }
+    /**
+     * Get the Reference Request
+     */
+    public HttpRequest getReferenceRequest() {
+        return referenceRequest;
     }
 }

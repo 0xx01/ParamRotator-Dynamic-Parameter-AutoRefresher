@@ -1,9 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="AutoSessionUpdater:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/AutoSessionUpdater_jar</output-path>
-    <root id="archive" name="AutoSessionUpdater.jar">
-      <element id="module-output" name="ParamRotator" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/portswigger/burp/extensions/montoya-api/2025.12/montoya-api-2025.12.jar" path-in-jar="/" />
-    </root>
-  </artifact>
-</component>

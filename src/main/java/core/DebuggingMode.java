@@ -1,3 +1,5 @@
+package core;
+
 import burp.api.montoya.MontoyaApi;
 
 /**
@@ -16,7 +18,7 @@ public class DebuggingMode {
     private final MontoyaApi api;
 
     /**
-     * Constructs a DebuggingMode instance.
+     * Constructs a core.DebuggingMode instance.
      *
      * @param api Montoya API instance
      */

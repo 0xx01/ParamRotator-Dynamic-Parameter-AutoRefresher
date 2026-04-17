@@ -3,6 +3,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
+.mvn
+.idea
+out/artifacts/paramrotator_jar
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

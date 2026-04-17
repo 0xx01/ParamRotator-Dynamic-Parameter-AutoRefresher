@@ -1,4 +1,7 @@
+package gui;
+
 import burp.api.montoya.MontoyaApi;
+import core.ParameterManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,14 +24,14 @@ public class ParameterDialog extends JDialog {
     private JLabel statusLabel;
 
     /**
-     * Constructs the ParameterDialog.
+     * Constructs the gui.ParameterDialog.
      *
      * @param parent  Parent frame
      * @param api     Montoya API (for logging if needed)
-     * @param manager ParameterManager instance
+     * @param manager core.ParameterManager instance
      */
     public ParameterDialog(Frame parent, MontoyaApi api, ParameterManager manager) {
-        super(parent, "Parameter Manager", true);
+        super(parent, "core.Parameter Manager", true);
         this.parameterManager = manager;
         this.tableModel = new ParameterTableModel(manager.getAllParameters());
 
@@ -124,7 +127,7 @@ public class ParameterDialog extends JDialog {
         JCheckBox enabledBox = new JCheckBox("Enabled", true);
         JCheckBox autoUpdateBox = new JCheckBox("Auto-Update", true);
 
-        panel.add(new JLabel("Parameter Name:"));
+        panel.add(new JLabel("core.Parameter Name:"));
         panel.add(nameField);
         panel.add(new JLabel("Initial Value:"));
         panel.add(valueField);
@@ -134,7 +137,7 @@ public class ParameterDialog extends JDialog {
         panel.add(autoUpdateBox);
 
         int result = JOptionPane.showConfirmDialog(this, panel,
-                "Add Custom Parameter", JOptionPane.OK_CANCEL_OPTION);
+                "Add Custom core.Parameter", JOptionPane.OK_CANCEL_OPTION);
 
         if (result == JOptionPane.OK_OPTION) {
             String name = nameField.getText().trim();

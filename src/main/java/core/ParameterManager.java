@@ -1,3 +1,5 @@
+package core;
+
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
@@ -36,10 +38,10 @@ public class ParameterManager {
     private static final Pattern PATH_PATTERN = Pattern.compile(";([^=]+)=([^;?/&\\s]+)");
 
     /**
-     * Constructs a ParameterManager.
+     * Constructs a core.ParameterManager.
      *
      * @param api   Montoya API
-     * @param debug DebuggingMode instance
+     * @param debug core.DebuggingMode instance
      */
     public ParameterManager(MontoyaApi api, DebuggingMode debug) {
         this.api = api;
@@ -114,18 +116,22 @@ public class ParameterManager {
 
         lines[0] = rebuildRequestLine(lines[0]);
 
-        return HttpRequest.httpRequest(ByteArray.byteArray(String.join("\r\n", lines)));
+        // preserve httpService
+        return HttpRequest.httpRequest(
+                request.httpService(),
+                ByteArray.byteArray(String.join("\r\n", lines))
+        );
     }
 
     /**
      * Adds a user-defined custom parameter.
      *
-     * @param name  Parameter name
+     * @param name  core.Parameter name
      * @param value Initial value
      */
     public void addCustomParameter(String name, String value) {
         if (parameterExists(name)) {
-            JOptionPane.showMessageDialog(null, "Parameter already exists");
+            JOptionPane.showMessageDialog(null, "core.Parameter already exists");
             return;
         }
         parameters.add(new Parameter(name, value, Parameter.ParameterSource.CUSTOM));
@@ -134,7 +140,7 @@ public class ParameterManager {
     /**
      * Removes a parameter by name.
      *
-     * @param name Parameter name
+     * @param name core.Parameter name
      */
     public void removeParameter(String name) {
         parameters.removeIf(p -> p.getName().equals(name));
@@ -157,7 +163,7 @@ public class ParameterManager {
     /**
      * Updates an existing parameter value.
      *
-     * @param name     Parameter name
+     * @param name     core.Parameter name
      * @param newValue New value to set
      */
     public void updateParameter(String name, String newValue) {

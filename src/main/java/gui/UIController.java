@@ -1,16 +1,18 @@
+package gui;
+
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.ui.contextmenu.ContextMenuEvent;
 import burp.api.montoya.ui.contextmenu.ContextMenuItemsProvider;
+import burp.api.montoya.ui.contextmenu.InvocationType;
+import core.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import burp.api.montoya.core.ToolType;
-import burp.api.montoya.ui.contextmenu.InvocationType;
-
 
 /**
  * Handles Burp Suite UI interactions and context menu registration.
@@ -21,6 +23,7 @@ import burp.api.montoya.ui.contextmenu.InvocationType;
  * - Managing parameters
  * - Starting/stopping auto-refresh
  * - Setting interval and debugging mode
+ * - Endpoint fuzzing
  * </p>
  */
 public class UIController {
@@ -29,24 +32,27 @@ public class UIController {
     private final ParameterManager parameterManager;
     private final AutoRefreshService autoRefreshService;
     private final DebuggingMode debuggingMode;
+    private final Settings settings;
 
     /**
      * Constructs the UI controller and registers context menu items.
      *
-     * @param api                 Montoya API instance
-     * @param parameterManager    ParameterManager instance
-     * @param autoRefreshService  AutoRefreshService instance
-     * @param debuggingMode       DebuggingMode instance
+     * @param api                Montoya API instance
+     * @param parameterManager   core.ParameterManager instance
+     * @param autoRefreshService core.AutoRefreshService instance
+     * @param debuggingMode      core.DebuggingMode instance
      */
     public UIController(MontoyaApi api,
                         ParameterManager parameterManager,
                         AutoRefreshService autoRefreshService,
-                        DebuggingMode debuggingMode) {
+                        DebuggingMode debuggingMode,
+                        Settings settings) {
 
         this.api = api;
         this.parameterManager = parameterManager;
         this.autoRefreshService = autoRefreshService;
         this.debuggingMode = debuggingMode;
+        this.settings = settings;
 
         registerMenuItems();
     }
@@ -65,50 +71,77 @@ public class UIController {
             @Override
             public List<Component> provideMenuItems(ContextMenuEvent event) {
 
-                // Menu items
-                JMenuItem setReferenceButton = new JMenuItem("Set as Reference");
-                JMenuItem extractParamsButton = new JMenuItem("Extract Parameters from Request");
-                JMenuItem extractLocationButton = new JMenuItem("Extract Parameters from Location Header");
-                JMenuItem manageParamsButton = new JMenuItem("Manage Parameters...");
-                JMenuItem startAutoRefreshButton = new JMenuItem("Start Auto-Refresh");
-                JMenuItem stopAutoRefreshButton = new JMenuItem("Stop Auto-Refresh");
-                JMenuItem setIntervalButton = new JMenuItem("Set Interval");
-                JMenuItem debuggingModeButton = new JMenuItem("Debugging Mode");
+                // ===== Menu Items =====
+                JMenuItem setReferenceButton      = new JMenuItem("Set as Reference");
+                JMenuItem extractParamsButton     = new JMenuItem("Extract Parameters from Request");
+                JMenuItem extractLocationButton   = new JMenuItem("Extract Parameters from Location Header");
+                JMenuItem manageParamsButton      = new JMenuItem("Manage Parameters...");
+                JMenuItem startAutoRefreshButton  = new JMenuItem("Start Auto-Refresh");
+                JMenuItem stopAutoRefreshButton   = new JMenuItem("Stop Auto-Refresh");
+                JMenuItem setIntervalButton       = new JMenuItem("Set Interval");
+                JMenuItem debuggingModeButton     = new JMenuItem("Debugging Mode");
+                JMenuItem removeReferenceButton   = new JMenuItem("Remove the current reference request");
+                JMenuItem toggleModeButton = new JMenuItem(
+                        "Mode: " + settings.getModeLabel()
+                );
 
-                // ===== Debugging Mode =====
+
+
+                // ===== Action Listeners =====
+
                 debuggingModeButton.addActionListener(e -> toggleDebuggingMode());
 
-                // ===== Set Reference Request =====
                 setReferenceButton.addActionListener(e -> setReferenceRequest(event));
 
-                // ===== Extract Parameters from Request =====
+                removeReferenceButton.addActionListener(e -> removeReferenceRequest(event));
+
                 extractParamsButton.addActionListener(e -> extractParameters(event));
 
-                // ===== Manage Parameters =====
+                extractLocationButton.addActionListener(e -> extractFromLocationHeader(event));
+
                 manageParamsButton.addActionListener(e ->
                         SwingUtilities.invokeLater(() ->
                                 new ParameterDialog(getParentFrame(), api, parameterManager).setVisible(true)));
 
-                // ===== Auto-Refresh Controls =====
                 startAutoRefreshButton.addActionListener(e -> startAutoRefresh(event));
                 stopAutoRefreshButton.addActionListener(e -> stopAutoRefresh());
 
-                // Set Interval
                 setIntervalButton.addActionListener(e -> setAutoRefreshInterval());
 
-                // Extract from Location Header
-                extractLocationButton.addActionListener(e -> extractFromLocationHeader(event));
 
-                return List.of(
-                        setReferenceButton,
-                        extractParamsButton,
-                        extractLocationButton,
-                        manageParamsButton,
-                        startAutoRefreshButton,
-                        stopAutoRefreshButton,
-                        setIntervalButton,
-                        debuggingModeButton
-                );
+                toggleModeButton.addActionListener(e -> {
+                    settings.toggleMode();
+                    JOptionPane.showMessageDialog(getParentFrame(),
+                            "Switched to: " + settings.getModeLabel(),
+                            "Mode Changed",
+                            JOptionPane.INFORMATION_MESSAGE);
+                });
+
+
+                // ===== Build Menu =====
+                List<Component> items = new ArrayList<>();
+
+                // Display these buttons on Repeater only.
+                if (event.invocationType() == InvocationType.MESSAGE_EDITOR_REQUEST
+                        && event.messageEditorRequestResponse().isPresent()) {
+                    // Show only if reference request is set
+                    if (autoRefreshService.getReferenceRequest() != null && Settings.isReferenceRequestMode()) {
+                        items.add(startAutoRefreshButton);
+                        items.add(stopAutoRefreshButton);
+                        items.add(setIntervalButton);
+                        items.add(removeReferenceButton);
+                    }
+                }
+                if (autoRefreshService.getReferenceRequest() == null && Settings.isReferenceRequestMode()) {
+                    items.add(setReferenceButton);
+                }
+
+                items.add(extractParamsButton);
+                items.add(extractLocationButton);
+                items.add(manageParamsButton);
+                items.add(toggleModeButton);
+                items.add(debuggingModeButton);
+                return items;
             }
 
             /** Gets the Burp Suite main frame */
@@ -145,6 +178,17 @@ public class UIController {
                 });
             }
 
+            /** Remove current reference request */
+            private void removeReferenceRequest(ContextMenuEvent event) {
+                getRequestResponse(event).ifPresent(r -> {
+                    autoRefreshService.removeReferenceRequest();
+                    JOptionPane.showMessageDialog(getParentFrame(),
+                            "Reference request is deleted now!",
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE);
+                });
+            }
+
             /** Extract parameters from request */
             private void extractParameters(ContextMenuEvent event) {
                 getRequestResponse(event).ifPresent(r -> {
@@ -156,26 +200,13 @@ public class UIController {
                 });
             }
 
-            /** Start auto-refresh */
+            /** Start auto-refresh — Repeater only */
             private void startAutoRefresh(ContextMenuEvent event) {
-                // Check if invoked from Repeater
-                if (!event.isFromTool(ToolType.REPEATER)) {
-                    JOptionPane.showMessageDialog(
-                            getParentFrame(),
+                if (event.invocationType() != InvocationType.MESSAGE_EDITOR_REQUEST
+                        || event.messageEditorRequestResponse().isEmpty()) {
+                    JOptionPane.showMessageDialog(getParentFrame(),
                             "This feature can only be used inside Repeater!",
-                            "Warning",
-                            JOptionPane.WARNING_MESSAGE
-                    );
-                    return;
-                }
-
-                if (event.messageEditorRequestResponse().isEmpty()) {
-                    JOptionPane.showMessageDialog(
-                            getParentFrame(),
-                            "No request selected.",
-                            "Warning",
-                            JOptionPane.WARNING_MESSAGE
-                    );
+                            "Warning", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
                 var editor = event.messageEditorRequestResponse().get();
@@ -188,7 +219,9 @@ public class UIController {
             private void stopAutoRefresh() {
                 if (autoRefreshService.isRunning()) {
                     autoRefreshService.stop();
-                    JOptionPane.showMessageDialog(getParentFrame(), "Auto-Refresh has been stopped.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(getParentFrame(),
+                            "Auto-Refresh has been stopped.",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
                 }
             }
 
@@ -238,12 +271,12 @@ public class UIController {
                         } else {
                             JOptionPane.showMessageDialog(getParentFrame(),
                                     "No Location header with parameters found.",
-                                    "Warning",
-                                    JOptionPane.WARNING_MESSAGE);
+                                    "Warning", JOptionPane.WARNING_MESSAGE);
                         }
                     }
                 });
             }
+
         });
     }
 }
