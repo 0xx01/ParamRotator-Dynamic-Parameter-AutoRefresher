@@ -1,4 +1,4 @@
-# ParamRotator
+# ParamRotator – Dynamic Parameter Auto-Refresher
 
 [![Burp Suite](https://img.shields.io/badge/Burp_Suite-2026+-orange?logo=burpsuite&logoColor=white)](https://portswigger.net/burp)
 [![Java](https://img.shields.io/badge/Java-21-blue?logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
@@ -12,14 +12,17 @@
 
 ## Overview
 
-**ParamRotator** eliminates the overhead of manually managing rotating tokens, session identifiers, and other dynamic parameters during penetration testing.
+**ParamRotator – Dynamic Parameter Auto-Refresher** is a Burp Suite extension for tracking and maintaining dynamic HTTP parameters during manual security testing.
 
-By automatically extracting and refreshing these values, the extension ensures that requests remain valid throughout the testing workflow — allowing security testers to focus on vulnerability discovery rather than request maintenance.
+It extracts selected parameters from requests and responses, keeps their latest values, and automatically applies them to outgoing Burp Repeater requests.
+
+ParamRotator supports query parameters, matrix path parameters, Location headers, response-based updates, and periodic refresh through a reference request.
 
 ---
 
 ## Table of Contents
 
+- [Overview](#Overview)
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
 - [Features](#features)
@@ -71,10 +74,10 @@ Two refresh modes are available depending on the application's session binding b
 - Extract parameters from **Location headers**
 - Add **custom parameters** manually
 
-### Automatic Token Injection
-- Injects fresh tokens into every Repeater request automatically
-- Extracts new tokens from every Repeater response automatically
-- No manual copying required
+### Automatic Parameter Injection
+- Injects the latest tracked parameter values into outgoing Repeater requests
+- Extracts updated parameter values from Repeater responses
+- Eliminates repetitive manual copying and replacement
 
 ### Auto-Refresh
 - Background thread sends a reference request at a configurable interval
@@ -82,8 +85,8 @@ Two refresh modes are available depending on the application's session binding b
 - Configurable refresh interval in seconds
 
 ### Two Refresh Modes
-- **Repeater Listener Mode** — extracts tokens live from Repeater responses
-- **Reference Request Mode** — sends a saved request periodically to fetch fresh tokens
+- Repeater Listener Mode — updates tracked parameters from Repeater responses
+- Reference Request Mode — periodically sends a saved request to obtain fresh parameter values
 
 ### Parameter Manager UI
 - Visual table showing all tracked parameters with current values
@@ -133,9 +136,9 @@ src/main/java/
 The extension listens to every Repeater request and response:
 ```
 User presses Send
-    → inject current tokens into the request 
+    → inject current parameter values into the request 
     → request is sent to the server
-    → extract new tokens from the response 
+    → extract updated parameter values from the response 
     → ready for the next Send with fresh tokens 
 ```
 
@@ -154,8 +157,6 @@ Set as Reference → Start Auto-Refresh
 Best for applications **without endpoint binding** — tokens are tied to specific endpoints.
 
 Switch between modes via right-click → **Mode: Repeater Listener / Reference Request**.
-
-> **Note:** Due to a current Burp Suite API limitation, the Repeater editor does not visually reflect token updates. Tokens are correctly injected into every outgoing request — verify via the **ParamRotator tab** or **Logger**.
 
 ---
 
@@ -207,7 +208,7 @@ Intercept the target request → Send to Repeater → Drop
 
 **Step 3 — Press Send**
 
-Press Send in Repeater. ParamRotator will automatically inject and refresh tokens on every request.
+Press Send in Repeater. ParamRotator will automatically inject and fresh parameter values on every request.
 
 ---
 
@@ -243,7 +244,7 @@ Right-click → **Manage Parameters...** to open the Parameter Manager.
 
 | Menu Item | Description |
 |-----------|-------------|
-| **Set as Reference** | Save the current request as the token source |
+| **Set as Reference** | Save the current request as the parameter source |
 | **Remove Reference Request** | Clear the saved reference request |
 | **Extract Parameters from Request** | Extract matrix and query params from URL |
 | **Extract Parameters from Location Header** | Extract params from a redirect Location header |

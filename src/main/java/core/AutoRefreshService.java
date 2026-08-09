@@ -9,11 +9,11 @@ import java.util.concurrent.*;
 
 /**
  * Service that handles automatic refreshing of HTTP requests in Burp Repeater.
- * <p>
- * Sends a reference request at regular intervals, updates parameters from the response,
- * and applies them to the current request in Repeater.
+ *
+ * Sends a reference request at regular intervals, updates parameters from
+ * the response, and applies them to the current request in Repeater.
+ *
  * Supports debug logging and configurable interval.
- * </p>
  */
 public class AutoRefreshService {
 
@@ -21,19 +21,38 @@ public class AutoRefreshService {
     private final ParameterManager parameterManager;
     private final DebuggingMode debuggingMode;
 
-    /** Reference request used to fetch updated parameters */
-    private HttpRequest referenceRequest;
+    /**
+     * Reference request used to fetch updated parameters.
+     *
+     * Accessed by both Swing EDT and scheduler thread.
+     */
+    private volatile HttpRequest referenceRequest;
 
-    /** Clean base request to avoid parameter accumulation */
+    /**
+     * Clean base request to avoid parameter accumulation.
+     */
     private volatile HttpRequest baseRequest;
 
-    /** Current request displayed in Repeater editor */
+    /**
+     * Current request displayed in Repeater editor.
+     */
     private volatile HttpRequest currentRequestInRepeater;
 
-    private burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse currentMessageEditor;
+    /**
+     * Current Repeater message editor.
+     *
+     * Accessed by both Swing EDT and scheduler thread,
+     * therefore declared volatile for visibility.
+     */
+    private volatile burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse currentMessageEditor;
 
-    /** Scheduler for periodic refreshes */
-    private ScheduledExecutorService scheduler;
+    /**
+     * Scheduler for periodic refreshes.
+     *
+     * Accessed by both Swing EDT and scheduler thread,
+     * therefore declared volatile for visibility.
+     */
+    private volatile ScheduledExecutorService scheduler;
 
     /** Interval in seconds between refreshes */
     private int interval = 30;
@@ -42,26 +61,36 @@ public class AutoRefreshService {
     private volatile boolean running = false;
 
     /**
-     * Constructs the core.AutoRefreshService.
+     * Constructs the AutoRefreshService.
      *
      * @param api              Montoya API instance
-     * @param parameterManager core.ParameterManager instance
-     * @param debuggingMode    core.DebuggingMode instance
+     * @param parameterManager ParameterManager instance
+     * @param debuggingMode    DebuggingMode instance
      */
-    public AutoRefreshService(MontoyaApi api, ParameterManager parameterManager, DebuggingMode debuggingMode) {
+    public AutoRefreshService(
+            MontoyaApi api,
+            ParameterManager parameterManager,
+            DebuggingMode debuggingMode) {
+
         this.api = api;
         this.parameterManager = parameterManager;
         this.debuggingMode = debuggingMode;
     }
 
+    /**
+     * Sets the reference request used for refreshing parameters.
+     *
+     * @param referenceRequest reference request
+     */
+    public void setReferenceRequest(
+            HttpRequest referenceRequest) {
 
-    /** Sets the reference request used for refreshing parameters */
-    public void setReferenceRequest(HttpRequest referenceRequest) {
         this.referenceRequest = referenceRequest;
     }
 
     /**
      * Sets the current Repeater editor and request.
+     *
      * Saves a clean base request to avoid parameter accumulation.
      *
      * @param editor  The Repeater message editor
@@ -69,11 +98,11 @@ public class AutoRefreshService {
      */
     public void setCurrentRepeater(
             burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse editor,
-            HttpRequest current
-    ) {
+            HttpRequest current) {
+
         this.currentMessageEditor = editor;
         this.currentRequestInRepeater = current;
-        this.baseRequest = current; // Save clean copy
+        this.baseRequest = current;
     }
 
     /** Returns the refresh interval in seconds */
@@ -93,130 +122,268 @@ public class AutoRefreshService {
 
     /**
      * Starts the auto-refresh scheduler.
-     * <p>
-     * Validates that a reference request, base request, editor, and parameters exist.
-     * Otherwise shows a warning dialog and logs in debugging mode.
-     * </p>
+     *
+     * Validates that a reference request, editor,
+     * base request, and parameters exist.
      */
     public void start() {
-        if (running) stop();
 
-        if (referenceRequest == null || baseRequest == null || currentMessageEditor == null
+        if (running) {
+            stop();
+        }
+
+        if (referenceRequest == null
+                || baseRequest == null
+                || currentMessageEditor == null
                 || parameterManager.getAllParameters().isEmpty()) {
 
             if (debuggingMode.isDebuggingModeEnabled()) {
-                api.logging().logToOutput("Auto-Refresh cannot start: missing references or parameters");
+                api.logging().logToOutput(
+                        "Auto-Refresh cannot start: "
+                                + "missing references or parameters"
+                );
             }
 
-            JOptionPane.showMessageDialog(null,
-                    "Auto-Refresh cannot start: missing parameters or current request",
+            showMessage(
+                    "Auto-Refresh cannot start: "
+                            + "missing parameters or current request",
                     "Warning",
-                    JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.WARNING_MESSAGE
+            );
+
             return;
         }
 
-        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "AutoRefresh-Thread");
-            t.setDaemon(true);
-            return t;
-        });
+        scheduler = Executors.newSingleThreadScheduledExecutor(
+                r -> {
+                    Thread t =
+                            new Thread(
+                                    r,
+                                    "AutoRefresh-Thread"
+                            );
+
+                    t.setDaemon(true);
+
+                    return t;
+                }
+        );
 
         running = true;
 
-        scheduler.scheduleWithFixedDelay(() -> {
-            try {
-                refreshTokens();
-            } catch (Exception ex) {
-                api.logging().logToError("Auto-Refresh failed: " + ex.getMessage());
-            }
-        }, 5, interval, TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(
+                () -> {
+                    try {
+                        refreshTokens();
+                    } catch (Exception ex) {
+
+                        api.logging().logToError(
+                                "Auto-Refresh failed: "
+                                        + ex.getMessage()
+                        );
+                    }
+                },
+                5,
+                interval,
+                TimeUnit.SECONDS
+        );
 
         if (debuggingMode.isDebuggingModeEnabled()) {
-            api.logging().logToOutput("Auto-Refresh started with interval: " + interval + "s");
+            api.logging().logToOutput(
+                    "Auto-Refresh started with interval: "
+                            + interval
+                            + "s"
+            );
         }
 
-        JOptionPane.showMessageDialog(null,
+        showMessage(
                 "Auto-Refresh started successfully.",
                 "Success",
-                JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     /**
      * Stops the auto-refresh scheduler if running.
-     * Waits briefly for termination and logs in debugging mode.
      */
     public void stop() {
+
         running = false;
 
-        if (scheduler != null) {
-            scheduler.shutdownNow();
+        ScheduledExecutorService currentScheduler =
+                scheduler;
+
+        if (currentScheduler != null) {
+
+            currentScheduler.shutdownNow();
+
             try {
-                scheduler.awaitTermination(1, TimeUnit.SECONDS);
+
+                currentScheduler.awaitTermination(
+                        1,
+                        TimeUnit.SECONDS
+                );
+
             } catch (InterruptedException e) {
+
                 Thread.currentThread().interrupt();
             }
         }
 
         if (debuggingMode.isDebuggingModeEnabled()) {
-            api.logging().logToOutput("Auto-Refresh stopped");
+
+            api.logging().logToOutput(
+                    "Auto-Refresh stopped"
+            );
         }
     }
 
     /**
-     * Core logic to refresh parameters and update the Repeater request.
-     * <p>
-     * Sends the reference request, updates parameters, and applies them to the
-     * current Repeater request on the Swing EDT.
-     * </p>
+     * Core logic to refresh parameters and update
+     * the Repeater request.
+     *
+     * Runs on the scheduler thread.
      */
     private void refreshTokens() {
 
-        if (referenceRequest == null || baseRequest == null || currentMessageEditor == null) {
+        HttpRequest currentReferenceRequest =
+                referenceRequest;
+
+        HttpRequest currentBaseRequest =
+                baseRequest;
+
+        burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse currentEditor =
+                currentMessageEditor;
+
+        if (currentReferenceRequest == null
+                || currentBaseRequest == null
+                || currentEditor == null) {
+
             if (debuggingMode.isDebuggingModeEnabled()) {
-                api.logging().logToOutput("Auto-Refresh: missing references, skipping...");
+
+                api.logging().logToOutput(
+                        "Auto-Refresh: missing references, "
+                                + "skipping..."
+                );
             }
+
             return;
         }
 
         if (debuggingMode.isDebuggingModeEnabled()) {
-            api.logging().logToOutput("Auto-Refresh: fetching new tokens...");
+
+            api.logging().logToOutput(
+                    "Auto-Refresh: fetching new Parameters..."
+            );
         }
 
-        // Send reference request
-        HttpRequestResponse response = api.http().sendRequest(referenceRequest);
+        /*
+         * Send reference request.
+         */
+        HttpRequestResponse response =
+                api.http().sendRequest(
+                        currentReferenceRequest
+                );
 
-        // Update parameters from response if auto-update is enabled
+        /*
+         * Update parameters from response
+         * if auto-update is enabled.
+         */
         if (parameterManager.isAutoUpdateEnabled()) {
-            int updated = parameterManager.updateFromResponse(response).size();
-            if (updated > 0 && debuggingMode.isDebuggingModeEnabled()) {
-                api.logging().logToOutput("Auto-Refresh: updated " + updated + " parameters");
+
+            int updated =
+                    parameterManager
+                            .updateFromResponse(response)
+                            .size();
+
+            if (updated > 0
+                    && debuggingMode.isDebuggingModeEnabled()) {
+
+                api.logging().logToOutput(
+                        "Auto-Refresh: updated "
+                                + updated
+                                + " parameters"
+                );
             }
         }
 
-        // Apply updated parameters to CLEAN base request
-        HttpRequest updatedRequest = parameterManager.applyToRequest(baseRequest);
+        /*
+         * Apply updated parameters to the clean
+         * base request.
+         */
+        HttpRequest updatedRequest =
+                parameterManager.applyToRequest(
+                        currentBaseRequest
+                );
 
         if (updatedRequest != null) {
-            SwingUtilities.invokeLater(() -> {
-                currentMessageEditor.setRequest(updatedRequest);
-                currentRequestInRepeater = updatedRequest;
 
-                if (debuggingMode.isDebuggingModeEnabled()) {
-                    api.logging().logToOutput("Auto-Refresh: request updated with latest parameters");
-                }
-            });
+            SwingUtilities.invokeLater(
+                    () -> {
+
+                        currentEditor.setRequest(
+                                updatedRequest
+                        );
+
+                        currentRequestInRepeater =
+                                updatedRequest;
+
+                        if (debuggingMode
+                                .isDebuggingModeEnabled()) {
+
+                            api.logging().logToOutput(
+                                    "Auto-Refresh: request updated "
+                                            + "with latest parameters"
+                            );
+                        }
+                    }
+            );
         }
     }
+
     /**
-     * Remove the Reference Request
+     * Removes the reference request.
      */
     public void removeReferenceRequest() {
+
         referenceRequest = null;
     }
+
     /**
-     * Get the Reference Request
+     * Returns the current reference request.
+     *
+     * @return reference request or null
      */
     public HttpRequest getReferenceRequest() {
+
         return referenceRequest;
+    }
+
+    /**
+     * Displays a Swing message dialog using the Burp Suite
+     * frame as the parent.
+     */
+    private void showMessage(
+            String message,
+            String title,
+            int messageType) {
+
+        Runnable action = () ->
+                JOptionPane.showMessageDialog(
+                        api.userInterface()
+                                .swingUtils()
+                                .suiteFrame(),
+                        message,
+                        title,
+                        messageType
+                );
+
+        if (SwingUtilities.isEventDispatchThread()) {
+
+            action.run();
+
+        } else {
+
+            SwingUtilities.invokeLater(action);
+        }
     }
 }

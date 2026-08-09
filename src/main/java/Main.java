@@ -31,7 +31,7 @@ public class Main implements BurpExtension {
     @Override
     public void initialize(MontoyaApi montoyaApi) {
         this.api = montoyaApi;
-        api.extension().setName("ParamRotator");
+        api.extension().setName("ParamRotator – Dynamic Parameter Auto-Refresher");
 
         this.debuggingMode      = new DebuggingMode(api);
         this.settings           = new Settings(api, debuggingMode);

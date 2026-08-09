@@ -6,19 +6,19 @@ import burp.api.montoya.MontoyaApi;
  * Manages global plugin settings.
  * <p>
  * Controls the refresh mode:
- * - REFERENCE_REQUEST: uses a saved reference request to fetch tokens
- * - REPEATER_LISTENER: intercepts Repeater responses to extract tokens
+ * - REFERENCE_REQUEST: uses a saved reference request to fetch parameters
+ * - REPEATER_LISTENER: intercepts Repeater responses to extract parameters
  * </p>
  */
 public class Settings {
 
     /**
-     * Defines how the plugin fetches fresh tokens.
+     * Defines how the plugin fetches fresh parameters.
      */
     public enum RefreshMode {
-        /** Send a saved reference request to obtain new tokens */
+        /** Send a saved reference request to obtain new parameters */
         REFERENCE_REQUEST,
-        /** Extract tokens from live Repeater responses */
+        /** Extract parameters from live Repeater responses */
         REPEATER_LISTENER
     }
 
