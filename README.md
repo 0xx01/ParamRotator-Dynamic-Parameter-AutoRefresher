@@ -281,7 +281,7 @@ If you'd like to contribute:
 5. Open a Pull Request
 
 You can also open an Issue to discuss ideas or report bugs:
-https://github.com/0xx01/ParamRotator/issues
+https://github.com/0xx01/ParamRotator-Dynamic-Parameter-AutoRefresher/issues
 
 ---
 
