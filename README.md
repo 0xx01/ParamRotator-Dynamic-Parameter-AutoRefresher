@@ -174,7 +174,7 @@ Switch between modes via right-click → **Mode: Repeater Listener / Reference R
 
 ### Option 1 — Install from Release *(recommended)*
 
-1. Download the latest `ParamRotator.jar` from the [Releases](https://github.com/0xx01/ParamRotator/releases) page.
+1. Download the latest `ParamRotator.jar` from the [Releases](https://github.com/0xx01/ParamRotator-Dynamic-Parameter-AutoRefresher/releases) page.
 2. Open **Burp Suite**.
 3. Navigate to **Extensions → Add**.
 4. Set **Extension Type** to `Java`.
@@ -183,8 +183,8 @@ Switch between modes via right-click → **Mode: Repeater Listener / Reference R
 
 ### Option 2 — Build from Source
 ```bash
-git clone https://github.com/0xx01/ParamRotator.git
-cd ParamRotator
+git clone https://github.com/0xx01/ParamRotator-Dynamic-Parameter-AutoRefresher.git
+cd ParamRotator-Dynamic-Parameter-AutoRefresher
 mvn clean package
 ```
 
@@ -287,4 +287,4 @@ https://github.com/0xx01/ParamRotator/issues
 
 ## License
 
-This project is licensed under the **MIT License**. See the [LICENSE](https://github.com/0xx01/ParamRotator/blob/main/LICENSE) file for full details.
+This project is licensed under the **MIT License**. See the [LICENSE](https://github.com/0xx01/ParamRotator-Dynamic-Parameter-AutoRefresher/blob/main/LICENSE) file for full details.
